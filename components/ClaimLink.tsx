@@ -22,12 +22,13 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { ModernInput } from '@/components/ui/ModernInput';
 
+// Using more reliable public RPCs for better stability
 const CHAINS = [
-  { name: 'base', id: 8453, rpc: 'https://mainnet.base.org', symbol: 'ETH', coinId: 'ETH', networkId: 'base' },
+  { name: 'base', id: 8453, rpc: 'https://developer-access-mainnet.base.org', symbol: 'ETH', coinId: 'ETH', networkId: 'base' },
   { name: 'polygon', id: 137, rpc: 'https://polygon-rpc.com', symbol: 'MATIC', coinId: 'MATIC', networkId: 'polygon' },
   { name: 'arbitrum', id: 42161, rpc: 'https://arb1.arbitrum.io/rpc', symbol: 'ETH', coinId: 'ETH', networkId: 'arbitrum' },
   { name: 'optimism', id: 10, rpc: 'https://mainnet.optimism.io', symbol: 'ETH', coinId: 'ETH', networkId: 'optimism' },
-  { name: 'bsc', id: 56, rpc: 'https://binance.llvm.kr', symbol: 'BNB', coinId: 'BNB', networkId: 'bsc' },
+  { name: 'bsc', id: 56, rpc: 'https://bsc-dataseed1.binance.org', symbol: 'BNB', coinId: 'BNB', networkId: 'bsc' }, // Updated BSC RPC
   { name: 'avalanche', id: 43114, rpc: 'https://api.avax.network/ext/bc/C/rpc', symbol: 'AVAX', coinId: 'AVAX', networkId: 'avalanche' },
 ];
 
@@ -71,10 +72,13 @@ export default function ClaimLink() {
               }, 500);
               return;
             }
-          } catch (e) {}
+          } catch (e) {
+            console.error(`Failed to connect to ${chain.name} RPC: ${chain.rpc}`, e);
+          }
         }
         setTimeout(() => setStatus('empty'), 1000);
       } catch (e) {
+        console.error("Error parsing link or creating wallet:", e);
         setStatus('error');
       }
     };
@@ -89,11 +93,19 @@ export default function ClaimLink() {
     try {
       const provider = balance.wallet.provider;
       const gasPrice = await provider.getGasPrice();
-      const gasLimit = ethers.BigNumber.from(21000);
-      const gasCost = gasPrice.mul(gasLimit).mul(120).div(100);
+      // Increase gas limit buffer to 50% for variable transactions like swaps
+      const gasLimit = ethers.BigNumber.from(21000).mul(150).div(100); 
+      const gasCost = gasPrice.mul(gasLimit);
+
+      // Check if sendAmountWei is large enough after gas cost
       const sendAmountWei = parseEther(balance.amount).sub(gasCost);
 
-      if (sendAmountWei.lte(0)) throw new Error('Insufficient gas');
+      if (sendAmountWei.lte(0)) {
+        throw new Error('Insufficient funds in burner wallet to cover gas and transfer.');
+      }
+      
+      // OPTIONAL: Add a check for SideShift minimum here using /pair endpoint
+      // This would require a fetch to your /api/sideshift/pair route
 
       const res = await fetch('/api/sideshift/shifts/variable', {
         method: 'POST',
@@ -173,9 +185,6 @@ export default function ClaimLink() {
             >
               {/* Balance Card */}
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-2xl relative overflow-hidden shadow-2xl shadow-blue-900/20">
-                <div className="absolute top-0 right-0 p-4 opacity-20">
-                  <Zap size={48} />
-                </div>
                 <div className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Gift Found</div>
                 <div className="text-4xl font-mono font-bold text-white mb-2">
                   {Number(balance?.amount).toFixed(4)}{' '}
@@ -245,7 +254,7 @@ export default function ClaimLink() {
               >
                 {status === 'withdrawing' ? (
                   <>
-                    <Loader2 className="animate-spin" size={18} />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
                 ) : (
