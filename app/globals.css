@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-lime-400: #a3e635;
+  --color-lime-500: #84cc16;
+  --color-lime-neon: #bef264;
+
+  --animate-scanline: scanline 4s linear infinite;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+}
+
+:root {
+    --neon-lime: #bef264;
+}
+
+body {
+    background-color: #000;
+    color: #fff;
+    overflow-x: hidden;
+}
+
+/* Tactical Grid Background */
+.bg-tactical-grid {
+    background-image: 
+        linear-gradient(to right, #111 1px, transparent 1px),
+        linear-gradient(to bottom, #111 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.bg-screen-grid {
+    background-image: 
+        linear-gradient(to right, #222 1px, transparent 1px),
+        linear-gradient(to bottom, #222 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+/* Glassmorphism */
+.glass-panel {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}
+
+/* Text Effects */
+.text-glow {
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+}
+
+.text-glow-lime {
+    text-shadow: 0 0 10px rgba(190, 242, 100, 0.6);
+}
+
+/* Custom Input */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+
+.caret-blink {
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Diagonal Stripe Pattern */
+.bg-stripes {
+    background-image: linear-gradient(45deg, #000 25%, transparent 25%, transparent 50%, #000 50%, #000 75%, transparent 75%, transparent);
+    background-size: 10px 10px;
+}
+
+/* Spotlight Effect */
+.spotlight {
+    background: radial-gradient(600px circle at var(--x) var(--y), rgba(190, 242, 100, 0.1), transparent 40%);
+}
