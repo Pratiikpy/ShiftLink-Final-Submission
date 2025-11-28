@@ -24,11 +24,12 @@ import { ModernInput } from '@/components/ui/ModernInput';
 
 // Using more reliable public RPCs for better stability
 const CHAINS = [
+  { name: 'ethereum', id: 1, rpc: 'https://ethereum.publicnode.com', symbol: 'ETH', coinId: 'ETH', networkId: 'ethereum' }, // Added Ethereum Mainnet
   { name: 'base', id: 8453, rpc: 'https://developer-access-mainnet.base.org', symbol: 'ETH', coinId: 'ETH', networkId: 'base' },
   { name: 'polygon', id: 137, rpc: 'https://polygon-rpc.com', symbol: 'MATIC', coinId: 'MATIC', networkId: 'polygon' },
   { name: 'arbitrum', id: 42161, rpc: 'https://arb1.arbitrum.io/rpc', symbol: 'ETH', coinId: 'ETH', networkId: 'arbitrum' },
   { name: 'optimism', id: 10, rpc: 'https://mainnet.optimism.io', symbol: 'ETH', coinId: 'ETH', networkId: 'optimism' },
-  { name: 'bsc', id: 56, rpc: 'https://bsc-dataseed1.binance.org', symbol: 'BNB', coinId: 'BNB', networkId: 'bsc' }, // Updated BSC RPC
+  { name: 'bsc', id: 56, rpc: 'https://bsc-dataseed1.binance.org', symbol: 'BNB', coinId: 'BNB', networkId: 'bsc' },
   { name: 'avalanche', id: 43114, rpc: 'https://api.avax.network/ext/bc/C/rpc', symbol: 'AVAX', coinId: 'AVAX', networkId: 'avalanche' },
 ];
 
@@ -53,18 +54,23 @@ export default function ClaimLink() {
     const scan = async () => {
       const key = parseLink(window.location.href);
       if (!key) {
+        console.error("Link parsing failed: No key found in URL hash.");
         setStatus('error');
         return;
       }
 
       try {
         const wallet = getWalletFromPrivateKey(key);
+        console.log("Burner Wallet Address:", wallet.address);
+
         for (const chain of CHAINS) {
           try {
             const provider = new ethers.providers.JsonRpcProvider(chain.rpc);
             const bal = await provider.getBalance(wallet.address);
-            if (bal.gt(parseEther('0.001'))) {
-              // Quick 0.5s delay for visual polish, then show
+            console.log(`Scanning ${chain.name} (RPC: ${chain.rpc}): Balance: ${formatEther(bal)} ${chain.symbol}`);
+
+            if (bal.gt(parseEther('0.001'))) { // Checks if balance is greater than 0.001 ETH
+              console.log(`Funds detected on ${chain.name}! Amount: ${formatEther(bal)} ${chain.symbol}`);
               setTimeout(() => {
                 setBalance({ amount: formatEther(bal), chain, wallet: wallet.connect(provider) });
                 toast.success('Funds detected!');
@@ -73,12 +79,13 @@ export default function ClaimLink() {
               return;
             }
           } catch (e) {
-            console.error(`Failed to connect to ${chain.name} RPC: ${chain.rpc}`, e);
+            console.error(`Failed to connect to ${chain.name} RPC or get balance: ${chain.rpc}`, e);
           }
         }
+        console.log("No sufficient funds found on any scanned chain.");
         setTimeout(() => setStatus('empty'), 1000);
       } catch (e) {
-        console.error("Error parsing link or creating wallet:", e);
+        console.error("Error during wallet creation or scanning process:", e);
         setStatus('error');
       }
     };
